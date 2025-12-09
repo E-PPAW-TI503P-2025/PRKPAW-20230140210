@@ -4,6 +4,8 @@ const router = express.Router();
 const auth = require("../middleware/authMiddleware");
 const { getDailyReport } = require("../controllers/reportController");
 
-router.get("/daily", auth, getDailyReport);
+// FINAL ROUTE FIX:
+// Frontend memanggil: /api/report  → backend harus handle: "/"
+router.get("/", auth, getDailyReport);
 
 module.exports = router;

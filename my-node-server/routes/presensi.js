@@ -6,19 +6,25 @@ const presensiController = require("../controllers/presensiController");
 const authMiddleware = require("../middleware/authMiddleware");
 const { addUserData } = require("../middleware/permissionMiddleware");
 
-// /api/presensi/check-in
+// CHECK-IN
 router.post(
   "/check-in",
-  authMiddleware,   // wajib duluan → isi req.user dari JWT
-  addUserData,      // cek req.user ada
+  [
+    authMiddleware,
+    addUserData,
+    presensiController.upload.single("image")
+  ],
   presensiController.CheckIn
 );
 
-// /api/presensi/check-out
+// CHECK-OUT
 router.post(
   "/check-out",
-  authMiddleware,
-  addUserData,
+  [
+    authMiddleware,
+    addUserData,
+    presensiController.upload.single("image")
+  ],
   presensiController.CheckOut
 );
 

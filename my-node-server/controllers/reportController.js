@@ -1,39 +1,46 @@
 const { Presensi, User } = require("../models");
 const { Op } = require("sequelize");
+const { zonedTimeToUtc } = require("date-fns-tz");
 
 exports.getDailyReport = async (req, res) => {
   try {
     const { nama } = req.query;
 
-    // Ambil rentang 2 hari terakhir (menghindari masalah timezone)
-    const start = new Date();
-    start.setDate(start.getDate() - 1);
-    start.setHours(0, 0, 0, 0);
+    // Ambil waktu WIB (Asia/Jakarta)
+    const timeZone = "Asia/Jakarta";
 
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    // Awal hari WIB
+    const startWIB = zonedTimeToUtc(
+      new Date().toLocaleString("en-US", { timeZone }),
+      timeZone
+    );
+    startWIB.setHours(0, 0, 0, 0);
 
-    const options = {
-      where: {
-        checkIn: {
-          [Op.between]: [start, end],
-        },
-      },
-      include: [
-        {
-          model: User,
-          as: "user",
-          ...(nama && {
-            where: {
-              nama: { [Op.like]: `%${nama}%` },
-            },
-          }),
-        },
-      ],
-      order: [["checkIn", "DESC"]],
+    // Akhir hari WIB
+    const endWIB = zonedTimeToUtc(
+      new Date().toLocaleString("en-US", { timeZone }),
+      timeZone
+    );
+    endWIB.setHours(23, 59, 59, 999);
+
+    const includeUser = {
+      model: User,
+      as: "user",
     };
 
-    const data = await Presensi.findAll(options);
+    if (nama) {
+      includeUser.where = { nama: { [Op.like]: `%${nama}%` } };
+    }
+
+    const data = await Presensi.findAll({
+      where: {
+        checkIn: {
+          [Op.between]: [startWIB, endWIB],
+        },
+      },
+      include: [includeUser],
+      order: [["checkIn", "DESC"]],
+    });
 
     res.json({ data });
   } catch (error) {
